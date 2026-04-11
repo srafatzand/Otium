@@ -1,0 +1,31 @@
+// Otium/Models/Session.swift
+import Foundation
+
+enum SessionOutcome: String, Codable {
+    case completed   // break respected (with or without extension)
+    case overridden  // user hit Override
+}
+
+struct Session: Codable, Identifiable {
+    let id: UUID
+    let startTime: Date
+    let plannedDuration: TimeInterval
+    let actualDuration: TimeInterval
+    let extendUsed: Bool
+    let outcome: SessionOutcome
+
+    init(
+        startTime: Date,
+        plannedDuration: TimeInterval,
+        actualDuration: TimeInterval,
+        extendUsed: Bool,
+        outcome: SessionOutcome
+    ) {
+        self.id = UUID()
+        self.startTime = startTime
+        self.plannedDuration = plannedDuration
+        self.actualDuration = actualDuration
+        self.extendUsed = extendUsed
+        self.outcome = outcome
+    }
+}
