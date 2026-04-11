@@ -6,7 +6,7 @@ enum SessionOutcome: String, Codable {
     case overridden  // user hit Override
 }
 
-struct Session: Codable, Identifiable {
+struct Session: Codable, Identifiable, Equatable {
     let id: UUID
     let startTime: Date
     let plannedDuration: TimeInterval

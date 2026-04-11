@@ -1,5 +1,7 @@
 // Otium/Models/TimerState.swift
-enum TimerState: Equatable {
+import Foundation
+
+enum TimerState: Equatable, Hashable {
     case idle
     case running
     case breakPending   // animating overlay in

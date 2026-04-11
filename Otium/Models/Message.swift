@@ -1,7 +1,7 @@
 // Otium/Models/Message.swift
 import Foundation
 
-struct Message: Equatable, Identifiable {
+struct Message: Equatable, Hashable, Identifiable {
     let id: UUID
     let text: String
     let attribution: String?
@@ -13,10 +13,4 @@ struct Message: Equatable, Identifiable {
         self.attribution = attribution
         self.isDefault = isDefault
     }
-}
-
-// Used for persisting custom messages to UserDefaults
-struct CustomMessageRecord: Codable {
-    let text: String
-    let attribution: String?
 }
