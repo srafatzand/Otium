@@ -15,6 +15,7 @@ final class TimerViewModel: ObservableObject {
     var onBreakEnd: (() -> Void)?
 
     private var timer: Timer?
+    private var timerGeneration: Int = 0
     private var sessionStartTime: Date?
     private var sleepStartTime: Date?
 
@@ -46,6 +47,7 @@ final class TimerViewModel: ObservableObject {
 
     func useExtension() {
         guard state == .breakActive, !extendUsed else { return }
+        stopTimer()
         extendUsed = true
         state = .extended
         timeRemaining = 5 * 60
@@ -66,7 +68,9 @@ final class TimerViewModel: ObservableObject {
         streakStore.recordOverride()
         state = .idle
         sessionStartTime = nil
-        onBreakEnd?()
+        if extendUsed || state != .running {
+            onBreakEnd?()
+        }
     }
 
     var elapsedFraction: Double {
@@ -87,20 +91,28 @@ final class TimerViewModel: ObservableObject {
         sleepStartTime = nil
         guard state == .running || state == .extended else { return }
         timeRemaining = max(timeRemaining - sleptFor, 0)
-        if timeRemaining == 0 { sessionExpired() }
+        if timeRemaining == 0 {
+            if state == .extended { completeBreak() } else { sessionExpired() }
+        }
     }
 
     // MARK: - Timer
 
     private func startTimer() {
+        timerGeneration += 1
+        let gen = timerGeneration
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in self?.tick() }
+            Task { @MainActor [weak self] in
+                guard let self, self.timerGeneration == gen else { return }
+                self.tick()
+            }
         }
     }
 
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+        timerGeneration += 1
     }
 
     // MARK: - Test helpers
@@ -129,7 +141,11 @@ final class TimerViewModel: ObservableObject {
                 timeRemaining -= 1
             } else {
                 timeRemaining = 0
-                sessionExpired()
+                if state == .extended {
+                    completeBreak()
+                } else {
+                    sessionExpired()
+                }
             }
         case .breakActive:
             breakTick()

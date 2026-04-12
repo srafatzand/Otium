@@ -109,4 +109,17 @@ final class TimerViewModelTests: XCTestCase {
         vm._simulateTick(count: 25)
         XCTAssertEqual(vm.elapsedFraction, 0.25, accuracy: 0.01)
     }
+
+    func testExtensionExpiry_completesSessionWithoutReshowingOverlay() {
+        // Full extension cycle: session → expiry → break active → 5 more mins → extension expires
+        vm.startSession(duration: 2)
+        vm._simulateTick(count: 2)                // → breakPending
+        vm._forceBreakActive()                    // → breakActive
+        vm.useExtension()                         // → extended, timeRemaining = 5*60
+        vm._simulateTick(count: 5 * 60)           // extension expires → completeBreak()
+        XCTAssertEqual(vm.state, .idle)
+        XCTAssertEqual(sessionStore.sessions.first?.outcome, .completed)
+        XCTAssertEqual(sessionStore.sessions.first?.extendUsed, true)
+        XCTAssertEqual(streakStore.count, 1)
+    }
 }
