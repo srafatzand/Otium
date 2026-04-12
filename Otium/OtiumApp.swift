@@ -1,17 +1,12 @@
-//
-//  OtiumApp.swift
-//  Otium
-//
-//  Created by Samyar Rafatzand on 2026-04-11.
-//
-
+// Otium/OtiumApp.swift
 import SwiftUI
 
 @main
 struct OtiumApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+        // No windows — pure menu bar app
+        Settings { EmptyView() }
     }
 }
