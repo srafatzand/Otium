@@ -32,7 +32,7 @@ final class SessionStore: ObservableObject {
     /// Returns weekday (1=Sun … 7=Sat) → total focus minutes for the current week.
     func weeklyMinutes() -> [Int: Double] {
         let cal = Calendar.current
-        let weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
+        guard let weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) else { return [:] }
         var result = [Int: Double]()
         for session in sessions where session.startTime >= weekStart {
             let weekday = cal.component(.weekday, from: session.startTime)
@@ -44,7 +44,7 @@ final class SessionStore: ObservableObject {
     private func pruneOldSessions() {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: Date()) else { return }
         let before = sessions.count
-        sessions = sessions.filter { $0.startTime > cutoff }
+        sessions = sessions.filter { $0.startTime >= cutoff }
         if sessions.count != before { save() }
     }
 

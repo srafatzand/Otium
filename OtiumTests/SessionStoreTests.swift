@@ -14,16 +14,17 @@ final class SessionStoreTests: XCTestCase {
     }
 
     override func tearDown() {
-        UserDefaults.standard.removePersistentDomain(forName: suiteName)
+        UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
 
     func makeSession(
         startTime: Date = Date(),
         duration: TimeInterval = 25 * 60,
+        extendUsed: Bool = false,
         outcome: SessionOutcome = .completed
     ) -> Session {
-        Session(startTime: startTime, plannedDuration: duration, actualDuration: duration, extendUsed: false, outcome: outcome)
+        Session(startTime: startTime, plannedDuration: duration, actualDuration: duration, extendUsed: extendUsed, outcome: outcome)
     }
 
     func testAddSession_appearsInHistory() {
