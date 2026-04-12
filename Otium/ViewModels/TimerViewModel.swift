@@ -129,6 +129,7 @@ final class TimerViewModel: ObservableObject {
     func _forceBreakActive() {
         state = .breakActive
         breakTimeRemaining = 5 * 60
+        startTimer()
     }
     #endif
 
