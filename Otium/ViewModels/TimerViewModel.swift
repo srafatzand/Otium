@@ -117,7 +117,6 @@ final class TimerViewModel: ObservableObject {
 
     // MARK: - Test helpers
 
-    #if DEBUG
     func _simulateTick(count: Int) {
         for _ in 0..<count { tick() }
     }
@@ -131,7 +130,6 @@ final class TimerViewModel: ObservableObject {
         breakTimeRemaining = 5 * 60
         startTimer()
     }
-    #endif
 
     // MARK: - Private
 

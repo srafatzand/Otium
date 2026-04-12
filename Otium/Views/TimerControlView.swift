@@ -60,7 +60,7 @@ struct TimerControlView: View {
                     .font(.system(size: 11))
                     .foregroundColor(!customText.isEmpty ? Color(hex: "a78bfa") : Color(hex: "4b5563"))
                     .frame(width: 54)
-                    .onChange(of: customText) { newValue in
+                    .onChange(of: customText) { _, newValue in
                         let filtered = newValue.filter { $0.isNumber }
                         if filtered != newValue { customText = filtered }
                         if !filtered.isEmpty { selectedPreset = nil }
