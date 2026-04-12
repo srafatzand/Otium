@@ -1,6 +1,5 @@
 // Otium/AppDelegate.swift
 import AppKit
-import ServiceManagement
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -12,9 +11,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayController: OverlayWindowController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Register as login item so macOS shows it in "Allow in Background"
-        try? SMAppService.mainApp.register()
-
         // Stores
         streakStore = StreakStore()
         sessionStore = SessionStore()
