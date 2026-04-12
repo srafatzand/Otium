@@ -140,11 +140,7 @@ final class TimerViewModel: ObservableObject {
                 timeRemaining -= 1
             } else {
                 timeRemaining = 0
-                if state == .extended {
-                    completeBreak()
-                } else {
-                    sessionExpired()
-                }
+                sessionExpired()
             }
         case .breakActive:
             breakTick()
