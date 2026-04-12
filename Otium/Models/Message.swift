@@ -7,8 +7,8 @@ struct Message: Equatable, Hashable, Identifiable {
     let attribution: String?
     let isDefault: Bool
 
-    init(text: String, attribution: String? = nil, isDefault: Bool = false) {
-        self.id = UUID()
+    init(id: UUID = UUID(), text: String, attribution: String? = nil, isDefault: Bool = false) {
+        self.id = id
         self.text = text
         self.attribution = attribution
         self.isDefault = isDefault

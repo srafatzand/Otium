@@ -3,8 +3,15 @@ import Foundation
 
 // Codable DTO for persisting custom messages to UserDefaults
 struct CustomMessageRecord: Codable {
+    let id: UUID
     let text: String
     let attribution: String?
+
+    init(text: String, attribution: String?) {
+        self.id = UUID()
+        self.text = text
+        self.attribution = attribution
+    }
 }
 
 @MainActor
@@ -16,7 +23,7 @@ final class MessageStore: ObservableObject {
 
     private enum Keys {
         static let custom = "messages.custom"
-        static let deletedIds = "messages.deletedDefaultIds"
+        static let deletedTexts = "messages.deletedDefaultTexts"
     }
 
     private static let defaultMessages: [(text: String, attribution: String)] = [
@@ -52,43 +59,40 @@ final class MessageStore: ObservableObject {
 
     func delete(_ message: Message) {
         if message.isDefault {
-            if let idx = Self.defaultMessages.firstIndex(where: { $0.text == message.text }) {
-                var deleted = loadDeletedIds()
-                deleted.insert(idx)
-                defaults.set(Array(deleted), forKey: Keys.deletedIds)
-            }
+            var deleted = loadDeletedTexts()
+            deleted.insert(message.text)
+            defaults.set(Array(deleted), forKey: Keys.deletedTexts)
         } else {
             var records = loadCustomRecords()
-            records.removeAll { $0.text == message.text }
+            records.removeAll { $0.id == message.id }
             saveCustomRecords(records)
         }
-        shuffleQueue.removeAll { $0.text == message.text }
         rebuild()
     }
 
     func resetToDefaults() {
-        defaults.removeObject(forKey: Keys.deletedIds)
+        defaults.removeObject(forKey: Keys.deletedTexts)
         defaults.removeObject(forKey: Keys.custom)
         shuffleQueue = []
         rebuild()
     }
 
     private func rebuild() {
-        let deleted = loadDeletedIds()
-        let builtInMessages: [Message] = Self.defaultMessages.enumerated().compactMap { idx, pair in
-            guard !deleted.contains(idx) else { return nil }
+        let deleted = loadDeletedTexts()
+        let builtInMessages: [Message] = Self.defaultMessages.compactMap { pair in
+            guard !deleted.contains(pair.text) else { return nil }
             return Message(text: pair.text, attribution: pair.attribution, isDefault: true)
         }
         let customMessages: [Message] = loadCustomRecords().map {
-            Message(text: $0.text, attribution: $0.attribution, isDefault: false)
+            Message(id: $0.id, text: $0.text, attribution: $0.attribution, isDefault: false)
         }
         allMessages = builtInMessages + customMessages
         let texts = Set(allMessages.map { $0.text })
         shuffleQueue = shuffleQueue.filter { texts.contains($0.text) }
     }
 
-    private func loadDeletedIds() -> Set<Int> {
-        Set(defaults.array(forKey: Keys.deletedIds) as? [Int] ?? [])
+    private func loadDeletedTexts() -> Set<String> {
+        Set(defaults.array(forKey: Keys.deletedTexts) as? [String] ?? [])
     }
 
     private func loadCustomRecords() -> [CustomMessageRecord] {
