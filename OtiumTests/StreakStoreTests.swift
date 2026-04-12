@@ -2,6 +2,7 @@
 import XCTest
 @testable import Otium
 
+@MainActor
 final class StreakStoreTests: XCTestCase {
     var store: StreakStore!
     let suiteName = "test.streak.\(UUID().uuidString)"
@@ -13,7 +14,7 @@ final class StreakStoreTests: XCTestCase {
     }
 
     override func tearDown() {
-        UserDefaults().removePersistentDomain(forName: suiteName)
+        UserDefaults.standard.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
 
@@ -59,5 +60,14 @@ final class StreakStoreTests: XCTestCase {
         store.recordCleanSession()
         let store2 = StreakStore(defaults: defaults)
         XCTAssertEqual(store2.count, 1)
+    }
+
+    func testSetCount_clearsOverrideDateSoIncrementIsPossible() {
+        // Override today, then reset state to a past date — increment should work
+        store.recordOverride()
+        let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+        store._setCount(5, lastCompletedDate: threeDaysAgo, lastOverrideDate: nil)
+        store.recordCleanSession()
+        XCTAssertEqual(store.count, 6)
     }
 }

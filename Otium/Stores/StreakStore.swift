@@ -1,13 +1,13 @@
 // Otium/Stores/StreakStore.swift
 import Foundation
 
+@MainActor
 final class StreakStore: ObservableObject {
     @Published private(set) var count: Int
     private(set) var lastCompletedDate: Date?
     private(set) var lastOverrideDate: Date?
 
     private let defaults: UserDefaults
-    private let calendar = Calendar.current
 
     private enum Keys {
         static let count = "streak.count"
@@ -23,11 +23,11 @@ final class StreakStore: ObservableObject {
     }
 
     func recordCleanSession() {
-        let today = calendar.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Date())
         // Already recorded today
-        if let last = lastCompletedDate, calendar.isDate(last, inSameDayAs: today) { return }
+        if let last = lastCompletedDate, Calendar.current.isDate(last, inSameDayAs: today) { return }
         // Override happened today — no increment
-        if let override = lastOverrideDate, calendar.isDate(override, inSameDayAs: today) { return }
+        if let override = lastOverrideDate, Calendar.current.isDate(override, inSameDayAs: today) { return }
         count += 1
         lastCompletedDate = today
         persist()
@@ -35,16 +35,19 @@ final class StreakStore: ObservableObject {
 
     func recordOverride() {
         count = 0
-        lastOverrideDate = calendar.startOfDay(for: Date())
+        lastOverrideDate = Calendar.current.startOfDay(for: Date())
         persist()
     }
 
-    // Internal setter for testing — allows injecting past dates
-    func _setCount(_ value: Int, lastCompletedDate: Date?) {
+    // Test helper — injects past state including optional override date
+    #if DEBUG
+    func _setCount(_ value: Int, lastCompletedDate: Date?, lastOverrideDate: Date? = nil) {
         count = value
         self.lastCompletedDate = lastCompletedDate
+        self.lastOverrideDate = lastOverrideDate
         persist()
     }
+    #endif
 
     private func persist() {
         defaults.set(count, forKey: Keys.count)
