@@ -8,6 +8,7 @@ final class StatusBarController {
     private let statusItem: NSStatusItem
     private let popover: NSPopover
     private var cancellables = Set<AnyCancellable>()
+    private var eventMonitor: Any?
 
     init(
         viewModel: TimerViewModel,
@@ -47,9 +48,20 @@ final class StatusBarController {
 
     @objc private func togglePopover(_ sender: NSStatusBarButton) {
         if popover.isShown {
-            popover.performClose(nil)
+            closePopover()
         } else if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+                self?.closePopover()
+            }
+        }
+    }
+
+    private func closePopover() {
+        popover.performClose(nil)
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
         }
     }
 
