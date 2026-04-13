@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var viewModel: TimerViewModel!
     private var statusBarController: StatusBarController!
     private var overlayController: OverlayWindowController!
+    private var midnightTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Stores
@@ -67,6 +68,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSWorkspace.didWakeNotification,
             object: nil
         )
+
+        scheduleMidnightRefresh()
+    }
+
+    private func scheduleMidnightRefresh() {
+        let nextMidnight = Calendar.current.startOfDay(
+            for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+        )
+        let interval = nextMidnight.timeIntervalSinceNow
+        midnightTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            self?.sessionStore.objectWillChange.send()
+            self?.streakStore.objectWillChange.send()
+            self?.scheduleMidnightRefresh()
+        }
     }
 
     @objc private func systemWillSleep(_ note: Notification) {
