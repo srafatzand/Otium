@@ -1,7 +1,7 @@
 # Otium — Product Requirements Document
 
-**Version:** 1.0  
-**Date:** 2026-04-11  
+**Version:** 1.1  
+**Date:** 2026-04-13  
 **Status:** Approved
 
 ---
@@ -9,6 +9,8 @@
 ## 1. Overview
 
 Otium is a native macOS menu bar application that enforces structured work sessions with mandatory break intervals. When a work session ends, the screen dims with a fullscreen overlay and a short inspirational message. The user can extend their session by 5 minutes once per session, or override the break at the cost of resetting their streak. A running streak counter motivates consistent, healthy work habits.
+
+The popover uses a three-tab layout: **Focus** (timer + today's sessions), **Dashboard** (weekly stats and session history), and **Settings** (message customisation).
 
 ---
 
@@ -42,6 +44,8 @@ Otium is a native macOS menu bar application that enforces structured work sessi
 | U7 | See my streak and know that overriding costs it | I'm motivated to respect breaks |
 | U8 | View today's sessions and weekly focus history | I can reflect on my work patterns |
 | U9 | Customize the messages shown on the break overlay | The messages feel personal, not generic |
+| U10 | Stop a session early and still log my partial focus time | Tasks sometimes finish before the timer |
+| U11 | See a dashboard with weekly stats and per-day session history | I can track my focus patterns over the week |
 
 ---
 
@@ -65,20 +69,33 @@ The app runs as a background-only process (`LSUIElement = YES`). No Dock icon. N
 
 ---
 
-### F2 — Popover (Idle State)
+### F2 — Popover
 
-Opens when the user clicks the menu bar icon. Closes on click-outside or Escape.
+Opens when the user clicks the menu bar icon. Closes on click-outside (global `NSEvent` monitor required for `LSUIElement` apps) or by re-clicking the icon.
 
-**Sections (top to bottom):**
+**Header:** small status dot (purple when running, gray when idle) + "OTIUM" label.
 
-1. **Header row** — small status dot (gray when idle), "OTIUM" label, streak badge (`🔥 N day streak`)
-2. **Time display** — large `25:00` countdown in light lavender, "READY TO START" sub-label
-3. **Duration picker** — preset chips: `25m` `45m` `60m` `90m` + custom minute input field
-4. **Start Session button** — purple gradient, full width
-5. **Divider**
-6. **Today section** — "TODAY" label + `Xh Ym focused` total; list of completed sessions (start time + duration + status dot)
-7. **Weekly bar chart** — Mon–Sun, bar height = total minutes that day, today highlighted in purple
-8. **Footer** — session count ("3 sessions today") + Quit link
+**Tab bar (below header):** three tabs that switch the entire popover content:
+
+| Tab | Content |
+|---|---|
+| Focus | Timer ring + clock + duration picker + Start/Stop + today's sessions |
+| Dashboard | Weekly stats, bar chart, today + yesterday session lists |
+| Settings | Break message customisation |
+
+**Focus tab sections:**
+1. **Ring + clock** — thin arc ring (fills clockwise as session runs, soft glow at rest); `25:00` countdown at 36pt ultralight monospaced
+2. **Duration picker** — preset chips `25m` `45m` `60m` `90m` + custom minute input
+3. **Start Session / Stop Session button**
+4. **Today section** — session rows with colored dot, start time, and duration
+
+**Dashboard tab sections:**
+1. **Stat boxes** — Week Total, Daily Avg, Streak (3-up row)
+2. **Bar chart** — Mon–Sun, bar height = focus minutes, today highlighted in purple
+3. **TODAY** — section header with total, session rows with outcome labels
+4. **YESTERDAY** — same format, only shown when sessions exist
+
+**Footer (all tabs):** session count + Quit button.
 
 **Duration picker behavior:**
 - Exactly one option is active at all times (one of the presets, or the custom field)
@@ -108,7 +125,7 @@ Same layout as idle state with these changes:
 - "Start Session" button replaced with "Stop Session" (muted styling — `rgba(255,255,255,0.04)` bg, gray text)
 - Progress bar appears below the countdown: thin 3px bar, fills left-to-right as percentage of session elapsed, purple gradient
 
-**Stopping a session early:** Clicking "Stop Session" cancels the session. No break overlay is shown. The session is not logged in history. No streak effect.
+**Stopping a session early:** Clicking "Stop Session" ends the session without showing the break overlay. If ≥50% of the planned duration has elapsed, the session is logged with `outcome: .stopped` (blue dot) and the actual elapsed time. If <50% elapsed, the session is discarded. No streak effect in either case.
 
 ---
 
@@ -235,6 +252,7 @@ struct Session: Codable {
 enum SessionOutcome: String, Codable {
     case completed   // break was respected (with or without extension)
     case overridden  // override button was used
+    case stopped     // user stopped early; elapsed time logged if ≥50% complete
 }
 ```
 
@@ -325,6 +343,39 @@ All data stored in `UserDefaults` under the app's bundle identifier. No external
 | All messages deleted by user | Show a fallback: "Time to take a break." |
 | Monitor disconnected during break overlay | Remaining overlay windows handle their own lifecycle; disconnected screen's window is released. |
 | System time changed while session running | Timer uses monotonic clock (`ProcessInfo.processInfo.systemUptime` delta), not wall clock, to track elapsed time. |
+
+---
+
+### F9 — Dashboard
+
+See F2 (Dashboard tab) for layout. Additional data requirements:
+
+- **Week Total** — sum of `actualDuration` for all sessions in the current calendar week
+- **Daily Avg** — Week Total ÷ number of days in the current week that have at least one session
+- **Streak** — sourced from `StreakStore.count`
+- **Bar chart** — derived at render time from `SessionStore.weeklyMinutes()` (weekday → total minutes)
+- **TODAY / YESTERDAY** — filtered from `SessionStore.todaysSessions` / `yesterdaysSessions`
+
+Outcome labels in session rows:
+
+| Outcome | Dot color | Label |
+|---|---|---|
+| `.completed`, no extension | Green `#34d399` | "completed" |
+| `.completed`, extension used | Amber `#fbbf24` | "+5m ext" |
+| `.overridden` | Red `#ef4444` | "overridden" |
+| `.stopped` | Blue `#60a5fa` | "stopped early" |
+
+---
+
+### F10 — New Day Detection
+
+The app must reflect the new calendar day without requiring a restart.
+
+**Implementation:** On `applicationDidFinishLaunching`, schedule a one-shot `Timer` that fires at the next midnight (`Calendar.current.startOfDay` for tomorrow). On fire:
+- Call `objectWillChange.send()` on `SessionStore` and `StreakStore` so SwiftUI recomputes all derived properties using the current `Date()`
+- Re-schedule for the next midnight
+
+No data migration or state reset is needed — all computed properties already use live `Calendar.current` calls.
 
 ---
 

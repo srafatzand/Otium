@@ -10,7 +10,11 @@ A native macOS menu bar app that enforces structured work/break intervals with a
 - When time is up, your screen dims with a fullscreen overlay and a rotating stoic quote
 - Take the 5-minute break, or use **5 More Minutes** once per session (streak-safe)
 - **Override** is always available — but it resets your streak to 0
-- Track your streak (days without overriding) and session history from the menu bar popover
+- **Stop Session** early and your focus time is still logged if you made it past the halfway point
+- **Focus tab** — animated progress ring around the clock, today's sessions listed below
+- **Dashboard tab** — week total, daily average, streak, bar chart, and a per-day session list
+- **Settings tab** — customise the break overlay messages
+- Streak and "today" data update at midnight without restarting the app
 
 ## Requirements
 
@@ -20,8 +24,8 @@ A native macOS menu bar app that enforces structured work/break intervals with a
 ## Setup
 
 ```bash
-git clone <repo-url>
-cd timer
+git clone https://github.com/srafatzand/Otium.git
+cd Otium
 open Otium.xcodeproj
 ```
 
@@ -39,15 +43,16 @@ Or press `⌘U` in Xcode.
 
 | Path | Purpose |
 |---|---|
-| `Otium/Models/` | `Session`, `TimerState`, `Message` value types |
+| `Otium/Models/` | `Session` (with `.completed` / `.overridden` / `.stopped` outcomes), `TimerState`, `Message` |
 | `Otium/Stores/` | Persistence: streak, sessions, messages (UserDefaults) |
-| `Otium/ViewModels/` | `TimerViewModel` — state machine and countdown |
-| `Otium/MenuBar/` | `StatusBarController` — ring+countdown icon and popover |
+| `Otium/ViewModels/` | `TimerViewModel` — state machine, countdown, sleep/wake |
+| `Otium/MenuBar/` | `StatusBarController` — ring+countdown icon, popover, click-outside dismiss |
 | `Otium/Overlay/` | `OverlayWindowController` — multi-monitor break screen |
-| `Otium/Views/` | SwiftUI views for popover and overlay |
+| `Otium/Views/` | SwiftUI views: `PopoverView` (3-tab nav), `TimerControlView`, `DashboardView`, `BreakOverlayView`, `MessagesSettingsView` |
 | `OtiumTests/` | XCTest unit tests for stores and view model |
 
 ## Docs
 
 - [PRD.md](PRD.md) — Full product requirements
 - [PLAN.md](PLAN.md) — Technical implementation plan
+- [HANDOFF.md](HANDOFF.md) — Agent handoff notes and architecture decisions

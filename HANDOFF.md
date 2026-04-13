@@ -1,7 +1,7 @@
 # Otium — Agent Handoff
 
-**Date:** 2026-04-12  
-**Status:** ALL TASKS COMPLETE. App is ready to build and run in Xcode.
+**Date:** 2026-04-13  
+**Status:** ALL TASKS COMPLETE. App is running, built, and pushed to GitHub.
 
 ---
 
@@ -10,7 +10,7 @@
 **Otium** is a native macOS menu bar app (SwiftUI + AppKit, no external dependencies) that enforces structured work/break intervals. When a work session ends, the screen dims with a fullscreen overlay, a stoic quote appears, and the user must take a 5-minute break. There's a once-per-session "5 More Minutes" extension and an Override that resets a streak counter.
 
 Full product spec: `PRD.md`  
-Full implementation plan: `PLAN.md` (12 tasks, TDD, subagent-driven)
+Full implementation plan: `PLAN.md`
 
 ---
 
@@ -18,32 +18,33 @@ Full implementation plan: `PLAN.md` (12 tasks, TDD, subagent-driven)
 
 ```
 /Users/samyarrafatzand/Projects/timer/   ← local Finder folder (never push this root)
-└── Otium/                               ← GIT REPO ROOT — push this to GitHub as "Otium"
+└── Otium/                               ← GIT REPO ROOT — https://github.com/srafatzand/Otium
     ├── Otium.xcodeproj/
     ├── Otium/                           ← Swift source files
     │   ├── OtiumApp.swift               ← @main entry
-    │   ├── AppDelegate.swift            ← wires all components
-    │   ├── Info.plist                   ← LSUIElement=YES already set
+    │   ├── AppDelegate.swift            ← wires all components + midnight refresh
+    │   ├── Info.plist                   ← LSUIElement=YES
     │   ├── Assets.xcassets/
     │   ├── Models/
     │   │   ├── TimerState.swift
-    │   │   ├── Session.swift
+    │   │   ├── Session.swift            ← SessionOutcome: .completed / .overridden / .stopped
     │   │   └── Message.swift
     │   ├── Stores/
     │   │   ├── StreakStore.swift
-    │   │   ├── SessionStore.swift
+    │   │   ├── SessionStore.swift       ← now includes yesterday/weekly aggregation helpers
     │   │   └── MessageStore.swift
     │   ├── ViewModels/
-    │   │   └── TimerViewModel.swift
+    │   │   └── TimerViewModel.swift     ← stopSession logs elapsed if ≥50% complete
     │   ├── MenuBar/
-    │   │   └── StatusBarController.swift
+    │   │   └── StatusBarController.swift ← global event monitor for click-outside dismiss
     │   ├── Overlay/
     │   │   └── OverlayWindowController.swift
     │   └── Views/
-    │       ├── BreakOverlayView.swift   ← also defines Color(hex:) extension
-    │       ├── PopoverView.swift
-    │       ├── TimerControlView.swift
-    │       ├── SessionHistoryView.swift
+    │       ├── BreakOverlayView.swift   ← defines Color(hex:) extension used app-wide
+    │       ├── PopoverView.swift        ← 3-tab navigation (Focus / Dashboard / Settings)
+    │       ├── TimerControlView.swift   ← ring + clock + today sessions
+    │       ├── DashboardView.swift      ← stats row + bar chart + per-day session list
+    │       ├── SessionHistoryView.swift ← legacy; kept on disk, no longer in tab nav
     │       └── MessagesSettingsView.swift
     ├── OtiumTests/
     │   ├── StreakStoreTests.swift
@@ -56,118 +57,70 @@ Full implementation plan: `PLAN.md` (12 tasks, TDD, subagent-driven)
     └── HANDOFF.md
 ```
 
-**Working directory for all git commands:** `/Users/samyarrafatzand/Projects/timer/Otium/`
+**Working directory for all git commands:** `/Users/samyarrafatzand/Projects/timer/Otium/`  
+**GitHub remote:** `https://github.com/srafatzand/Otium.git`
 
 ---
 
-## Git Log (current state)
+## Git Log (recent)
 
 ```
-55b22f6 feat: wire AppDelegate — connects stores, ViewModel, overlay, and status bar
-a042934 feat: add popover views — timer controls, session history, messages settings
-efc3bab feat: add StatusBarController with animated ring+countdown menu bar icon
-4f9be64 feat: add OverlayWindowController with multi-monitor support and fade animations
-efe582b feat: add BreakOverlayView with fixed headline, rotating quote card, and pill buttons
-9f813b2 fix: branch extended vs running on expiry, add generation counter, add extension expiry test
-3969b33 feat: add TimerViewModel state machine with sleep/wake and override handling
-1d31d2d fix: use UUID+text-keyed deletion in MessageStore, propagate record id to Message
-6645e2a feat: add MessageStore with shuffled rotation, custom messages, and reset
-59b3e09 fix: use >= in session pruning, safe weekStart unwrap, fix teardown isolation
-c824948 feat: add SessionStore with history, pruning, and weekly aggregation
-d9addeb fix: add @MainActor to StreakStore, fix _setCount to clear lastOverrideDate, add coverage test
-171d4d7 feat: add StreakStore with persistence and gap-neutral logic
-214f1e4 fix: add Equatable/Hashable to models, move CustomMessageRecord to store layer
-f4a37d9 feat: add Session, TimerState, and Message models
-```
-
-No GitHub remote has been added yet. The user will push once they have a GitHub repo URL.
-
----
-
-## Task Status
-
-| # | Task | Status |
-|---|---|---|
-| 1 | Xcode Project Setup | ✅ Done |
-| 2 | Models | ✅ Done |
-| 3 | StreakStore | ✅ Done |
-| 4 | SessionStore | ✅ Done |
-| 5 | MessageStore | ✅ Done |
-| 6 | TimerViewModel | ✅ Done |
-| 7 | BreakOverlayView | ✅ Done |
-| 8 | OverlayWindowController | ✅ Done |
-| 9 | StatusBarController | ✅ Done |
-| 10 | Popover Views | ✅ Done |
-| 11 | App Entry Point and Wiring | ✅ Done |
-| 12 | README | ✅ Done |
-
----
-
-## What's Left
-
-### 1. Add new files to Xcode target
-
-The following files exist on disk but were added outside of Xcode. Open `Otium.xcodeproj` in Xcode and use **File → Add Files to "Otium"** to add them to the `Otium` target:
-
-- `Otium/AppDelegate.swift`
-- `Otium/Stores/StreakStore.swift`
-- `Otium/Stores/SessionStore.swift`
-- `Otium/Stores/MessageStore.swift`
-- `Otium/ViewModels/TimerViewModel.swift`
-- `Otium/MenuBar/StatusBarController.swift`
-- `Otium/Overlay/OverlayWindowController.swift`
-- `Otium/Views/BreakOverlayView.swift`
-- `Otium/Views/PopoverView.swift`
-- `Otium/Views/TimerControlView.swift`
-- `Otium/Views/SessionHistoryView.swift`
-- `Otium/Views/MessagesSettingsView.swift`
-
-And add the test files to the `OtiumTests` target:
-
-- `OtiumTests/StreakStoreTests.swift`
-- `OtiumTests/SessionStoreTests.swift`
-- `OtiumTests/MessageStoreTests.swift`
-- `OtiumTests/TimerViewModelTests.swift`
-
-### 2. Build and run
-
-`⌘R` — should launch with no Dock icon; "○ Focus" appears in the menu bar.
-
-### 3. Run tests
-
-`⌘U` — all tests in StreakStoreTests, SessionStoreTests, MessageStoreTests, TimerViewModelTests should be green.
-
-### 4. Push to GitHub
-
-Once a GitHub repo is created:
-```bash
-cd /Users/samyarrafatzand/Projects/timer/Otium
-git remote add origin <your-github-repo-url>
-git push -u origin main
+43a4228 fix: increase spacing between ring and duration chips
+8e55697 fix: only log stopped session if ≥50% elapsed; shrink clock to 36pt
+cbfffe4 feat: redesign Focus tab — thin glow ring, today sessions, remove header streak badge
+60b7ccd fix: constrain tab content to fill available height so ScrollView works correctly
+3c79f8c fix: handle .stopped case in SessionHistoryView dotColor switch
+8626570 feat: log elapsed focus time when stopping a session early
+e91069a fix: close popover on outside click via global event monitor
+06915fd fix: wrap midnight timer callback in @MainActor Task to silence Swift 6 warnings
+f0c35c1 feat: replace gear toggle with 3-tab navigation (Focus / Dashboard / Settings)
+1304a56 feat: add DashboardView with stats, bar chart, and per-day session list
+a77dc08 feat: add yesterday/weekly SessionStore computed properties
+98247c1 feat: schedule midnight UI refresh for new-day detection
+88bc10f chore: add new source files to Xcode project targets
 ```
 
 ---
 
-## Key Fixes Applied (vs. original plan)
+## Feature Summary (all shipped)
 
-- **`AppDelegate.swift`:** Removed erroneous `#if DEBUG` guard around `_forceBreakActive()`. Without this fix, the break countdown would never start in production builds.
-- **`MessageStore.swift`:** UUID+text-keyed deletion instead of index-keyed, so deletion works correctly after queue rotation.
-- **`SessionStore.swift`:** `>=` cutoff for pruning (was `>`, would have kept a session exactly 90 days old).
-- **`StreakStore.swift`:** `@MainActor` added; `_setCount` clears `lastOverrideDate` for test isolation.
-- **`TimerViewModel.swift`:** Generation counter to prevent stale timer callbacks from firing after `stopSession`.
+### Original v1 features
+- Menu bar icon with animated progress ring + countdown
+- 25/45/60/90min presets + custom duration input
+- Fullscreen break overlay with stoic quotes (multi-monitor)
+- 5 More Minutes extension (once per session, streak-safe)
+- Override button (resets streak to 0)
+- Streak counter (gap-neutral: days off don't break or increment)
+- Session history stored in UserDefaults, 90-day rolling retention
+- Customisable break messages (add/delete/reset)
+- Sleep/wake handling (adjusts countdown for time asleep)
+
+### v2 additions (2026-04-13)
+- **3-tab navigation** — Focus / Dashboard / Settings tabs replace gear-icon toggle
+- **Dashboard tab** — week total, daily average, streak stat boxes; bar chart; today + yesterday session list with outcome labels
+- **Midnight refresh** — app detects day change without restart (`scheduleMidnightRefresh` in AppDelegate fires at 12:00 AM via Timer)
+- **Click-outside dismiss** — popover closes on any click outside (global `NSEvent` monitor; required for `LSUIElement` apps where `.transient` doesn't work)
+- **Focus tab redesign** — thin glow arc ring around clock, today's sessions listed below controls, streak badge removed from header
+- **Stop Session logging** — stopped sessions are logged with `outcome: .stopped` (blue dot) if ≥50% of the planned duration elapsed; discarded otherwise
+- **SessionStore additions** — `yesterdaysSessions`, `yesterdaysFocusTime`, `weeklyTotalFocusTime`, `weeklyActiveDays`, `dailyAverageFocusTime`
 
 ---
 
-## How to Run Tests (terminal)
+## Build & Run
 
-```bash
-cd /Users/samyarrafatzand/Projects/timer/Otium
-xcodebuild test -scheme Otium -destination 'platform=macOS' \
-  CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
-  2>&1 | grep -E "passed|failed|error:"
+```
+⌘R   — build and run (no Dock icon; "○ Focus" in menu bar)
+⌘U   — run all tests
 ```
 
-**Note:** `xcodebuild` requires Xcode to be the active developer directory:
-```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-```
+All files are already added to the correct Xcode targets.
+
+---
+
+## Key Design Decisions
+
+- **`LSUIElement = YES`** — background app, no Dock entry. Side effect: `NSPopover.behavior = .transient` doesn't auto-dismiss on outside clicks, requiring the global event monitor in `StatusBarController`.
+- **`Color(hex:)` extension** — defined once in `BreakOverlayView.swift`, available to all views in the same module.
+- **`SessionOutcome.stopped`** — distinct from `.overridden` so early stops don't reset the streak. Only logged when ≥50% of planned time elapsed.
+- **Midnight refresh** — uses a rescheduling one-shot `Timer` rather than a repeating 60s poll. Fires exactly at midnight, then re-arms for the next night.
+- **Tab content framing** — `Group { switch ... }.frame(maxWidth: .infinity, maxHeight: .infinity)` is required so `ScrollView` in `DashboardView` gets a bounded height inside the fixed-size popover.
