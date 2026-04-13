@@ -78,9 +78,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         let interval = nextMidnight.timeIntervalSinceNow
         midnightTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
-            self?.sessionStore.objectWillChange.send()
-            self?.streakStore.objectWillChange.send()
-            self?.scheduleMidnightRefresh()
+            Task { @MainActor [weak self] in
+                self?.sessionStore.objectWillChange.send()
+                self?.streakStore.objectWillChange.send()
+                self?.scheduleMidnightRefresh()
+            }
         }
     }
 
