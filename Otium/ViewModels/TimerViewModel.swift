@@ -43,13 +43,15 @@ final class TimerViewModel: ObservableObject {
         stopTimer()
         if let start = sessionStartTime {
             let elapsed = Date().timeIntervalSince(start)
-            sessionStore.add(Session(
-                startTime: start,
-                plannedDuration: sessionDuration,
-                actualDuration: elapsed,
-                extendUsed: extendUsed,
-                outcome: .stopped
-            ))
+            if elapsed / sessionDuration >= 0.5 {
+                sessionStore.add(Session(
+                    startTime: start,
+                    plannedDuration: sessionDuration,
+                    actualDuration: elapsed,
+                    extendUsed: extendUsed,
+                    outcome: .stopped
+                ))
+            }
         }
         state = .idle
         sessionStartTime = nil

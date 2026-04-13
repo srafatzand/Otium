@@ -53,7 +53,7 @@ struct TimerControlView: View {
                     // Clock
                     VStack(spacing: 4) {
                         Text(formattedTime)
-                            .font(.system(size: 44, weight: .ultraLight, design: .monospaced))
+                            .font(.system(size: 36, weight: .ultraLight, design: .monospaced))
                             .foregroundColor(Color(hex: "c4b5fd"))
                         Text(viewModel.state == .running || viewModel.state == .extended ? "FOCUSING" : "READY TO START")
                             .font(.system(size: 10))
