@@ -7,10 +7,10 @@ A native macOS menu bar app that enforces structured work/break intervals with a
 ## What it does
 
 - Set a work session (25, 45, 60, 90 min, or custom)
-- When time is up, your screen dims with a fullscreen overlay and a rotating stoic quote
+- When time is up, your screen dims with a fullscreen overlay and a rotation of customizable quotes (set by default to those from my favorite stoic authors and philosophers).
 - Take the 5-minute break, or use **5 More Minutes** once per session (streak-safe)
 - **Override** is always available — but it resets your streak to 0
-- **Stop Session** early and your focus time is still logged if you made it past the halfway point
+- **Stop Session** early and your focus time is still logged if you made it past the halfway point of your session
 - **Focus tab** — animated progress ring around the clock, today's sessions listed below
 - **Dashboard tab** — week total, daily average, streak, bar chart, and a per-day session list
 - **Settings tab** — customise the break overlay messages
@@ -29,7 +29,7 @@ cd Otium
 open Otium.xcodeproj
 ```
 
-Press `⌘R` to build and run. The app lives in your menu bar — no Dock icon.
+Press `⌘R` to build and run. The app lives in your menu bar (no Dock icon).
 
 ## Running tests
 
