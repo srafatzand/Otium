@@ -28,18 +28,6 @@ struct PopoverView: View {
                         .foregroundColor(Color(hex: "94a3b8"))
                 }
                 Spacer()
-                HStack(spacing: 4) {
-                    Text("🔥")
-                        .font(.system(size: 12))
-                    Text("\(streakStore.count) day streak")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color(hex: "a78bfa"))
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color(hex: "a78bfa").opacity(0.1))
-                .overlay(Capsule().stroke(Color(hex: "a78bfa").opacity(0.2), lineWidth: 1))
-                .clipShape(Capsule())
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
@@ -61,7 +49,7 @@ struct PopoverView: View {
             Group {
                 switch activeTab {
                 case .focus:
-                    TimerControlView(viewModel: viewModel)
+                    TimerControlView(viewModel: viewModel, sessionStore: sessionStore)
                 case .dashboard:
                     DashboardView(sessionStore: sessionStore, streakStore: streakStore)
                 case .settings:

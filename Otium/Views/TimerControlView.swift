@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TimerControlView: View {
     @ObservedObject var viewModel: TimerViewModel
+    @ObservedObject var sessionStore: SessionStore
     @State private var selectedPreset: Int? = 25
     @State private var customText: String = ""
 
@@ -16,95 +17,173 @@ struct TimerControlView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Large time display
-            VStack(spacing: 4) {
-                Text(formattedTime)
-                    .font(.system(size: 44, weight: .ultraLight, design: .monospaced))
-                    .foregroundColor(Color(hex: "c4b5fd"))
-                Text(viewModel.state == .running ? "FOCUSING" : "READY TO START")
-                    .font(.system(size: 11))
-                    .tracking(2)
-                    .foregroundColor(viewModel.state == .running ? Color(hex: "7c3aed").opacity(0.6) : Color(hex: "4b5563"))
-            }
-            .padding(.vertical, 12)
+        ScrollView {
+            VStack(spacing: 0) {
 
-            // Progress bar (running only)
-            if viewModel.state == .running || viewModel.state == .extended {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Rectangle().fill(Color.white.opacity(0.06)).frame(height: 3)
-                        LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "a78bfa")], startPoint: .leading, endPoint: .trailing)
-                            .frame(width: geo.size.width * viewModel.elapsedFraction, height: 3)
+                // Ring + clock
+                ZStack {
+                    // Track
+                    Circle()
+                        .stroke(Color.white.opacity(0.05), lineWidth: 2)
+
+                    // Progress arc (only while running)
+                    if viewModel.state == .running || viewModel.state == .extended {
+                        Circle()
+                            .trim(from: 0, to: CGFloat(viewModel.elapsedFraction))
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color(hex: "7c3aed"), Color(hex: "a78bfa")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                    }
+
+                    // Soft glow
+                    RadialGradient(
+                        colors: [Color(hex: "7c3aed").opacity(0.12), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 50
+                    )
+                    .clipShape(Circle())
+
+                    // Clock
+                    VStack(spacing: 4) {
+                        Text(formattedTime)
+                            .font(.system(size: 44, weight: .ultraLight, design: .monospaced))
+                            .foregroundColor(Color(hex: "c4b5fd"))
+                        Text(viewModel.state == .running || viewModel.state == .extended ? "FOCUSING" : "READY TO START")
+                            .font(.system(size: 10))
+                            .tracking(2)
+                            .foregroundColor(viewModel.state == .running ? Color(hex: "7c3aed").opacity(0.8) : Color(hex: "4b5563"))
                     }
                 }
-                .frame(height: 3)
-                .cornerRadius(2)
-                .padding(.bottom, 16)
-            }
+                .frame(width: 148, height: 148)
+                .padding(.top, 16)
+                .padding(.bottom, 4)
 
-            // Preset chips
-            HStack(spacing: 5) {
-                ForEach(presets, id: \.self) { preset in
-                    presetChip(preset)
+                // Progress bar (running only)
+                if viewModel.state == .running || viewModel.state == .extended {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 3)
+                            LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "a78bfa")], startPoint: .leading, endPoint: .trailing)
+                                .frame(width: geo.size.width * viewModel.elapsedFraction, height: 3)
+                        }
+                    }
+                    .frame(height: 3)
+                    .cornerRadius(2)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+                }
+
+                // Preset chips
+                HStack(spacing: 5) {
+                    ForEach(presets, id: \.self) { preset in
+                        presetChip(preset)
+                    }
+                }
+                .disabled(viewModel.state != .idle)
+                .padding(.bottom, 6)
+
+                // Custom input
+                HStack(spacing: 4) {
+                    TextField("custom", text: $customText)
+                        .textFieldStyle(.plain)
+                        .multilineTextAlignment(.center)
+                        .font(.system(size: 11))
+                        .foregroundColor(!customText.isEmpty ? Color(hex: "a78bfa") : Color(hex: "4b5563"))
+                        .frame(width: 54)
+                        .onChange(of: customText) { _, newValue in
+                            let filtered = newValue.filter { $0.isNumber }
+                            if filtered != newValue { customText = filtered }
+                            if !filtered.isEmpty { selectedPreset = nil }
+                        }
+                        .onSubmit { validateCustom() }
+                    Text("min")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(hex: "374151"))
+                }
+                .padding(.horizontal, 8)
+                .frame(height: 26)
+                .background(
+                    !customText.isEmpty
+                        ? Color(hex: "6366f1").opacity(0.1)
+                        : Color.white.opacity(0.03)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(
+                            !customText.isEmpty ? Color(hex: "6366f1").opacity(0.4) : Color.white.opacity(0.08),
+                            lineWidth: 1
+                        )
+                )
+                .cornerRadius(6)
+                .disabled(viewModel.state != .idle)
+                .padding(.bottom, 14)
+
+                // Start / Stop button
+                Button(action: toggleSession) {
+                    Text(viewModel.state == .idle ? "Start Session" : "Stop Session")
+                        .font(.system(size: 13, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            viewModel.state == .idle
+                                ? LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "6366f1")], startPoint: .leading, endPoint: .trailing)
+                                : LinearGradient(colors: [Color.white.opacity(0.04), Color.white.opacity(0.04)], startPoint: .leading, endPoint: .trailing)
+                        )
+                        .foregroundColor(viewModel.state == .idle ? .white : Color(hex: "64748b"))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 8)
+
+                // Today's sessions
+                if !sessionStore.todaysSessions.isEmpty {
+                    Divider().background(Color.white.opacity(0.06))
+
+                    HStack {
+                        Text("TODAY")
+                            .font(.system(size: 9, weight: .semibold))
+                            .tracking(1.5)
+                            .foregroundColor(Color(hex: "4b5563"))
+                        Spacer()
+                        Text(formatFocusTime(sessionStore.todaysFocusTime))
+                            .font(.system(size: 10))
+                            .foregroundColor(Color(hex: "6366f1"))
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+
+                    VStack(spacing: 2) {
+                        ForEach(sessionStore.todaysSessions) { session in
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(dotColor(for: session))
+                                    .frame(width: 7, height: 7)
+                                Text(formatTime(session.startTime))
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color(hex: "94a3b8"))
+                                Spacer()
+                                Text(formatDuration(session.actualDuration))
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Color(hex: "64748b"))
+                            }
+                            .padding(.vertical, 3)
+                        }
+                    }
                 }
             }
-            .disabled(viewModel.state != .idle)
-            .padding(.bottom, 6)
-
-            // Custom input
-            HStack(spacing: 4) {
-                TextField("custom", text: $customText)
-                    .textFieldStyle(.plain)
-                    .multilineTextAlignment(.center)
-                    .font(.system(size: 11))
-                    .foregroundColor(!customText.isEmpty ? Color(hex: "a78bfa") : Color(hex: "4b5563"))
-                    .frame(width: 54)
-                    .onChange(of: customText) { _, newValue in
-                        let filtered = newValue.filter { $0.isNumber }
-                        if filtered != newValue { customText = filtered }
-                        if !filtered.isEmpty { selectedPreset = nil }
-                    }
-                    .onSubmit { validateCustom() }
-                Text("min")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(hex: "374151"))
-            }
-            .padding(.horizontal, 8)
-            .frame(height: 26)
-            .background(
-                !customText.isEmpty
-                    ? Color(hex: "6366f1").opacity(0.1)
-                    : Color.white.opacity(0.03)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(
-                        !customText.isEmpty ? Color(hex: "6366f1").opacity(0.4) : Color.white.opacity(0.08),
-                        lineWidth: 1
-                    )
-            )
-            .cornerRadius(6)
-            .disabled(viewModel.state != .idle)
-            .padding(.bottom, 14)
-
-            // Start / Stop button
-            Button(action: toggleSession) {
-                Text(viewModel.state == .idle ? "Start Session" : "Stop Session")
-                    .font(.system(size: 13, weight: .medium))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(
-                        viewModel.state == .idle
-                            ? LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "6366f1")], startPoint: .leading, endPoint: .trailing)
-                            : LinearGradient(colors: [Color.white.opacity(0.04), Color.white.opacity(0.04)], startPoint: .leading, endPoint: .trailing)
-                    )
-                    .foregroundColor(viewModel.state == .idle ? .white : Color(hex: "64748b"))
-                    .cornerRadius(8)
-            }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
         }
     }
+
+    // MARK: - Helpers
 
     private var formattedTime: String {
         let t = viewModel.state == .idle ? activeDuration : viewModel.timeRemaining
@@ -145,5 +224,29 @@ struct TimerControlView: View {
     private func validateCustom() {
         guard let val = Int(customText) else { customText = ""; return }
         if !(1...180).contains(val) { customText = String(min(max(val, 1), 180)) }
+    }
+
+    private func dotColor(for session: Session) -> Color {
+        switch session.outcome {
+        case .completed: return session.extendUsed ? Color(hex: "fbbf24") : Color(hex: "34d399")
+        case .overridden: return Color(hex: "ef4444")
+        case .stopped: return Color(hex: "60a5fa")
+        }
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
+    }
+
+    private func formatDuration(_ interval: TimeInterval) -> String {
+        let m = Int(interval / 60)
+        return m < 60 ? "\(m) min" : "\(m / 60)h \(m % 60)m"
+    }
+
+    private func formatFocusTime(_ interval: TimeInterval) -> String {
+        let m = Int(interval / 60)
+        return m < 60 ? "\(m)m focused" : "\(m / 60)h \(m % 60)m focused"
     }
 }
