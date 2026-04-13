@@ -177,6 +177,7 @@ struct DashboardView: View {
         switch session.outcome {
         case .completed: return session.extendUsed ? Color(hex: "fbbf24") : Color(hex: "34d399")
         case .overridden: return Color(hex: "ef4444")
+        case .stopped: return Color(hex: "60a5fa")
         }
     }
 
@@ -184,6 +185,7 @@ struct DashboardView: View {
         switch session.outcome {
         case .completed: return session.extendUsed ? "+5m ext" : "completed"
         case .overridden: return "overridden"
+        case .stopped: return "stopped early"
         }
     }
 
@@ -191,6 +193,7 @@ struct DashboardView: View {
         switch session.outcome {
         case .completed: return session.extendUsed ? Color(hex: "fbbf24") : Color(hex: "34d399")
         case .overridden: return Color(hex: "ef4444")
+        case .stopped: return Color(hex: "60a5fa")
         }
     }
 

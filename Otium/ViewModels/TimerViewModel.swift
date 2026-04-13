@@ -41,6 +41,16 @@ final class TimerViewModel: ObservableObject {
 
     func stopSession() {
         stopTimer()
+        if let start = sessionStartTime {
+            let elapsed = Date().timeIntervalSince(start)
+            sessionStore.add(Session(
+                startTime: start,
+                plannedDuration: sessionDuration,
+                actualDuration: elapsed,
+                extendUsed: extendUsed,
+                outcome: .stopped
+            ))
+        }
         state = .idle
         sessionStartTime = nil
     }
