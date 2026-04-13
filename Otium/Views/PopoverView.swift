@@ -58,14 +58,17 @@ struct PopoverView: View {
             Divider().background(Color.white.opacity(0.06))
 
             // Main content
-            switch activeTab {
-            case .focus:
-                TimerControlView(viewModel: viewModel)
-            case .dashboard:
-                DashboardView(sessionStore: sessionStore, streakStore: streakStore)
-            case .settings:
-                MessagesSettingsView(messageStore: messageStore)
+            Group {
+                switch activeTab {
+                case .focus:
+                    TimerControlView(viewModel: viewModel)
+                case .dashboard:
+                    DashboardView(sessionStore: sessionStore, streakStore: streakStore)
+                case .settings:
+                    MessagesSettingsView(messageStore: messageStore)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Divider().background(Color.white.opacity(0.05))
             HStack {
