@@ -6,7 +6,9 @@ struct PopoverView: View {
     @ObservedObject var streakStore: StreakStore
     @ObservedObject var sessionStore: SessionStore
     @ObservedObject var messageStore: MessageStore
-    @State private var showMessages = false
+
+    private enum ActiveTab { case focus, dashboard, settings }
+    @State private var activeTab: ActiveTab = .focus
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,14 +40,6 @@ struct PopoverView: View {
                 .background(Color(hex: "a78bfa").opacity(0.1))
                 .overlay(Capsule().stroke(Color(hex: "a78bfa").opacity(0.2), lineWidth: 1))
                 .clipShape(Capsule())
-
-                Button(action: { showMessages.toggle() }) {
-                    Image(systemName: showMessages ? "xmark.circle" : "gearshape")
-                        .foregroundColor(Color(hex: "374151"))
-                        .font(.system(size: 12))
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 6)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
@@ -53,23 +47,24 @@ struct PopoverView: View {
 
             Divider().background(Color.white.opacity(0.06))
 
-            if showMessages {
+            // Tab bar
+            HStack(spacing: 0) {
+                tabButton("Focus", tab: .focus)
+                tabButton("Dashboard", tab: .dashboard)
+                tabButton("Settings", tab: .settings)
+            }
+            .background(Color.white.opacity(0.03))
+
+            Divider().background(Color.white.opacity(0.06))
+
+            // Main content
+            switch activeTab {
+            case .focus:
+                TimerControlView(viewModel: viewModel)
+            case .dashboard:
+                DashboardView(sessionStore: sessionStore, streakStore: streakStore)
+            case .settings:
                 MessagesSettingsView(messageStore: messageStore)
-            } else {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        TimerControlView(viewModel: viewModel)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
-
-                        Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.vertical, 12)
-
-                        SessionHistoryView(sessionStore: sessionStore)
-                            .padding(.horizontal, 20)
-                    }
-                }
             }
 
             Divider().background(Color.white.opacity(0.05))
@@ -94,5 +89,24 @@ struct PopoverView: View {
             )
         )
         .preferredColorScheme(.dark)
+    }
+
+    private func tabButton(_ label: String, tab: ActiveTab) -> some View {
+        Button(action: { activeTab = tab }) {
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .tracking(0.5)
+                .foregroundColor(activeTab == tab ? Color(hex: "a78bfa") : Color(hex: "4b5563"))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .overlay(alignment: .bottom) {
+                    if activeTab == tab {
+                        Rectangle()
+                            .fill(Color(hex: "7c4dff"))
+                            .frame(height: 1.5)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
     }
 }
