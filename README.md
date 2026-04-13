@@ -1,8 +1,10 @@
 # Otium
 
-A native macOS menu bar app that enforces structured work/break intervals with a fullscreen dimmed overlay, stoic quotes, and a streak counter.
+Otium is a native macOS menu bar app that enforces structured work/break intervals with a fullscreen dimmed overlay, customisable quotes, and a streak counter.
 
-*Otium* — Latin for "philosophical leisure", as Seneca described the rest that sharpens the mind.
+*Otium* is a Latin abstract term that broadly means "leisure" or "free time". Seneca, a Stoic philosopher of Ancient Rome, elevated it to something more meaningful: the **deliberate withdrawal from busyness** in order to think, reflect, and sharpen the mind.
+
+This app is built around the idea that the break is not lost time, but necessary for focus. If you struggle to take breaks, like myself, I hope this app can help you build healthier habits.
 
 ## What it does
 
