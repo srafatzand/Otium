@@ -29,16 +29,51 @@ final class SessionStore: ObservableObject {
         todaysSessions.reduce(0) { $0 + $1.actualDuration }
     }
 
+    var yesterdaysSessions: [Session] {
+        sessions.filter { Calendar.current.isDateInYesterday($0.startTime) }
+    }
+
+    var yesterdaysFocusTime: TimeInterval {
+        yesterdaysSessions.reduce(0) { $0 + $1.actualDuration }
+    }
+
+    var weeklyTotalFocusTime: TimeInterval {
+        let weekStart = currentWeekStart()
+        return sessions
+            .filter { $0.startTime >= weekStart }
+            .reduce(0) { $0 + $1.actualDuration }
+    }
+
+    var weeklyActiveDays: Int {
+        let weekStart = currentWeekStart()
+        let cal = Calendar.current
+        let daysWithSessions = sessions
+            .filter { $0.startTime >= weekStart }
+            .map { cal.startOfDay(for: $0.startTime) }
+        return Set(daysWithSessions).count
+    }
+
+    var dailyAverageFocusTime: TimeInterval {
+        let active = weeklyActiveDays
+        return active > 0 ? weeklyTotalFocusTime / Double(active) : 0
+    }
+
     /// Returns weekday (1=Sun … 7=Sat) → total focus minutes for the current week.
     func weeklyMinutes() -> [Int: Double] {
         let cal = Calendar.current
-        guard let weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) else { return [:] }
+        let weekStart = currentWeekStart()
         var result = [Int: Double]()
         for session in sessions where session.startTime >= weekStart {
             let weekday = cal.component(.weekday, from: session.startTime)
             result[weekday, default: 0] += session.actualDuration / 60
         }
         return result
+    }
+
+    private func currentWeekStart() -> Date {
+        let cal = Calendar.current
+        let comps = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        return cal.date(from: comps) ?? cal.startOfDay(for: Date())
     }
 
     private func pruneOldSessions() {

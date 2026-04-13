@@ -70,4 +70,31 @@ final class SessionStoreTests: XCTestCase {
         let store2 = SessionStore(defaults: defaults)
         XCTAssertEqual(store2.sessions.count, 1)
     }
+
+    func testYesterdaysSessions_filtersCorrectly() {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let today = Date()
+        store.add(Session(startTime: yesterday, plannedDuration: 1500, actualDuration: 1500, extendUsed: false, outcome: .completed))
+        store.add(Session(startTime: today, plannedDuration: 1500, actualDuration: 1500, extendUsed: false, outcome: .completed))
+        XCTAssertEqual(store.yesterdaysSessions.count, 1)
+    }
+
+    func testWeeklyTotalFocusTime_sumsCurrentWeek() {
+        let today = Date()
+        store.add(Session(startTime: today, plannedDuration: 1500, actualDuration: 1500, extendUsed: false, outcome: .completed))
+        store.add(Session(startTime: today, plannedDuration: 1500, actualDuration: 900, extendUsed: false, outcome: .overridden))
+        XCTAssertEqual(store.weeklyTotalFocusTime, 2400, accuracy: 1)
+    }
+
+    func testDailyAverageFocusTime_dividesByActiveDays() {
+        let today = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        store.add(Session(startTime: today, plannedDuration: 1500, actualDuration: 1500, extendUsed: false, outcome: .completed))
+        store.add(Session(startTime: yesterday, plannedDuration: 1500, actualDuration: 900, extendUsed: false, outcome: .completed))
+        XCTAssertEqual(store.dailyAverageFocusTime, 1200, accuracy: 1) // (1500+900)/2
+    }
+
+    func testDailyAverageFocusTime_zeroWhenNoSessions() {
+        XCTAssertEqual(store.dailyAverageFocusTime, 0)
+    }
 }
