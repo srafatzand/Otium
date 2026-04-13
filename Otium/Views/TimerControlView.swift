@@ -63,7 +63,7 @@ struct TimerControlView: View {
                 }
                 .frame(width: 148, height: 148)
                 .padding(.top, 16)
-                .padding(.bottom, 4)
+                .padding(.bottom, 14)
 
                 // Progress bar (running only)
                 if viewModel.state == .running || viewModel.state == .extended {
