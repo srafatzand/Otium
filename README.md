@@ -1,6 +1,6 @@
 # Otium
 
-Otium is a native macOS menu bar app that enforces structured work/break intervals with a fullscreen dimmed overlay, customisable quotes, and a streak counter.
+Otium is a native macOS menu bar app built for people who struggle to take breaks. It enforces structured work/break intervals with a fullscreen overlay, allowing you to take a moment away from the screen and prevent burnout.
 
 *Otium* is a Latin abstract term that broadly means "leisure" or "free time". Seneca, a Stoic philosopher of Ancient Rome, elevated it to something more meaningful: the **deliberate withdrawal from busyness** in order to think, reflect, and sharpen the mind.
 
@@ -25,10 +25,9 @@ This app is built around the idea that the break is not lost time, but necessary
 - Take the 5-minute break, or use **5 More Minutes** once per session (streak-safe)
 - **Override** is always available — but it resets your streak to 0
 - **Stop Session** early and your focus time is still logged if you made it past the halfway point of your session
-- **Focus tab** — animated progress ring around the clock, today's sessions listed below
-- **Dashboard tab** — week total, daily average, streak, bar chart, and a per-day session list
-- **Settings tab** — customise the break overlay messages
-- Streak and "today" data update at midnight without restarting the app
+- **Focus tab** with animated progress ring around the clock, today's sessions listed below
+- **Dashboard tab** with week total, daily average, streak, bar chart, and a per-day session list
+- **Settings tab** to customise the break overlay messages
 
 ## Requirements
 
