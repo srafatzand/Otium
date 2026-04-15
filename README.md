@@ -68,4 +68,3 @@ Or press `⌘U` in Xcode.
 
 - [PRD.md](PRD.md) — Full product requirements
 - [PLAN.md](PLAN.md) — Technical implementation plan
-- [HANDOFF.md](HANDOFF.md) — Agent handoff notes and architecture decisions
