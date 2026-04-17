@@ -35,6 +35,48 @@ final class OverlayWindowController {
         )
     }
 
+    func showCompletion(
+        repeatTotal: Int,
+        streakStore: StreakStore,
+        message: Message,
+        onDismiss: @escaping () -> Void
+    ) {
+        guard windows.isEmpty else { return }
+        for screen in NSScreen.screens {
+            let window = NSWindow(
+                contentRect: screen.frame,
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
+            window.level = .screenSaver
+            window.isOpaque = false
+            window.backgroundColor = .clear
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: BlockCompletionView(
+                repeatTotal: repeatTotal,
+                currentMessage: message,
+                streakStore: streakStore,
+                onDismiss: onDismiss
+            ))
+            windows.append(window)
+            window.orderFront(nil)
+        }
+        windows.forEach { $0.alphaValue = 0 }
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.4
+            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            windows.forEach { $0.animator().alphaValue = 1 }
+        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screensChanged),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+    }
+
     func hide(completion: (() -> Void)? = nil) {
         NotificationCenter.default.removeObserver(self, name: NSApplication.didChangeScreenParametersNotification, object: nil)
 

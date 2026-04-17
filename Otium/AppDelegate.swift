@@ -34,14 +34,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             let message = self.messageStore.nextMessage()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                self.overlayController.show(
-                    viewModel: self.viewModel,
-                    streakStore: self.streakStore,
-                    message: message
-                )
-                // Transition VM to breakActive after overlay fade-in animation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    self.viewModel._forceBreakActive()
+                if self.viewModel.isLastRepeat {
+                    let total = self.viewModel.repeatTotal
+                    self.overlayController.showCompletion(
+                        repeatTotal: total,
+                        streakStore: self.streakStore,
+                        message: message,
+                        onDismiss: {
+                            self.viewModel.completeBlock()
+                            self.overlayController.hide()
+                        }
+                    )
+                } else {
+                    self.overlayController.show(
+                        viewModel: self.viewModel,
+                        streakStore: self.streakStore,
+                        message: message
+                    )
+                    // Transition VM to breakActive after overlay fade-in animation
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        self.viewModel._forceBreakActive()
+                    }
                 }
             }
         }
