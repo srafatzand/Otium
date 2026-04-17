@@ -131,7 +131,7 @@ struct TimerControlView: View {
                 )
                 .cornerRadius(6)
                 .disabled(viewModel.state != .idle)
-                .padding(.bottom, 14)
+                .padding(.bottom, 8)
 
                 // Repeat disclosure (idle only)
                 if viewModel.state == .idle {
@@ -150,7 +150,7 @@ struct TimerControlView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .padding(.bottom, 4)
+                    .padding(.bottom, 8)
                 }
 
                 if repeatExpanded && viewModel.state == .idle {
