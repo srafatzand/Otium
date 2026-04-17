@@ -6,6 +6,8 @@ struct TimerControlView: View {
     @ObservedObject var sessionStore: SessionStore
     @State private var selectedPreset: Int? = 25
     @State private var customText: String = ""
+    @State private var repeatExpanded: Bool = false
+    @State private var repeatCount: Int = 2
 
     private let presets = [25, 45, 60, 90]
 
@@ -65,19 +67,25 @@ struct TimerControlView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 14)
 
-                // Progress bar (running only)
-                if viewModel.state == .running || viewModel.state == .extended {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 3)
-                            LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "a78bfa")], startPoint: .leading, endPoint: .trailing)
-                                .frame(width: geo.size.width * viewModel.elapsedFraction, height: 3)
+                // Session dots — only during repeat blocks
+                if viewModel.repeatTotal > 1 {
+                    HStack(spacing: 5) {
+                        ForEach(0..<viewModel.repeatTotal, id: \.self) { i in
+                            let done = i < viewModel.repeatCurrent - 1
+                            let current = i == viewModel.repeatCurrent - 1
+                            ZStack {
+                                if current {
+                                    Circle()
+                                        .fill(Color(hex: "a78bfa").opacity(0.25))
+                                        .frame(width: 15, height: 15)
+                                }
+                                Circle()
+                                    .fill(done || current ? Color(hex: "a78bfa") : Color.white.opacity(0.1))
+                                    .frame(width: current ? 9 : 7, height: current ? 9 : 7)
+                            }
                         }
                     }
-                    .frame(height: 3)
-                    .cornerRadius(2)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, 8)
                 }
 
                 // Preset chips
@@ -125,19 +133,82 @@ struct TimerControlView: View {
                 .disabled(viewModel.state != .idle)
                 .padding(.bottom, 14)
 
+                // Repeat disclosure (idle only)
+                if viewModel.state == .idle {
+                    Button(action: toggleRepeat) {
+                        HStack(spacing: 4) {
+                            Text("Repeat")
+                                .font(.system(size: 9, weight: .medium))
+                                .tracking(1)
+                                .foregroundColor(repeatExpanded ? Color(hex: "6366f1") : Color(hex: "374151"))
+                            Image(systemName: repeatExpanded ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 7, weight: .medium))
+                                .foregroundColor(repeatExpanded ? Color(hex: "6366f1") : Color(hex: "374151"))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 4)
+                }
+
+                if repeatExpanded && viewModel.state == .idle {
+                    HStack {
+                        Text("REPEAT")
+                            .font(.system(size: 9, weight: .semibold))
+                            .tracking(1.5)
+                            .foregroundColor(Color(hex: "4b5563"))
+                        Spacer()
+                        HStack(spacing: 0) {
+                            Button(action: { if repeatCount > 2 { repeatCount -= 1 } }) {
+                                Text("−")
+                                    .font(.system(size: 16, weight: .light))
+                                    .frame(width: 34, height: 28)
+                                    .foregroundColor(repeatCount <= 2 ? Color(hex: "374151") : Color(hex: "a78bfa"))
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(repeatCount <= 2)
+                            Divider().frame(height: 14)
+                            Text("× \(repeatCount)")
+                                .font(.system(size: 12, weight: .light, design: .monospaced))
+                                .foregroundColor(Color(hex: "c4b5fd"))
+                                .frame(width: 36)
+                            Divider().frame(height: 14)
+                            Button(action: { repeatCount += 1 }) {
+                                Text("+")
+                                    .font(.system(size: 16, weight: .light))
+                                    .frame(width: 34, height: 28)
+                                    .foregroundColor(Color(hex: "a78bfa"))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .background(Color.white.opacity(0.03))
+                        .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.white.opacity(0.08), lineWidth: 1))
+                        .cornerRadius(7)
+                    }
+                    .padding(.bottom, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 // Start / Stop button
                 Button(action: toggleSession) {
-                    Text(viewModel.state == .idle ? "Start Session" : "Stop Session")
-                        .font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            viewModel.state == .idle
-                                ? LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "6366f1")], startPoint: .leading, endPoint: .trailing)
-                                : LinearGradient(colors: [Color.white.opacity(0.04), Color.white.opacity(0.04)], startPoint: .leading, endPoint: .trailing)
-                        )
-                        .foregroundColor(viewModel.state == .idle ? .white : Color(hex: "64748b"))
-                        .cornerRadius(8)
+                    Group {
+                        if viewModel.state != .idle {
+                            Text("Stop Session")
+                        } else if repeatExpanded {
+                            Text("Start \(repeatCount) × \(Int(activeDuration / 60))m")
+                        } else {
+                            Text("Start Session")
+                        }
+                    }
+                    .font(.system(size: 13, weight: .medium))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        viewModel.state == .idle
+                            ? LinearGradient(colors: [Color(hex: "7c3aed"), Color(hex: "6366f1")], startPoint: .leading, endPoint: .trailing)
+                            : LinearGradient(colors: [Color.white.opacity(0.04), Color.white.opacity(0.04)], startPoint: .leading, endPoint: .trailing)
+                    )
+                    .foregroundColor(viewModel.state == .idle ? .white : Color(hex: "64748b"))
+                    .cornerRadius(8)
                 }
                 .buttonStyle(.plain)
                 .padding(.bottom, 8)
@@ -213,9 +284,17 @@ struct TimerControlView: View {
         .buttonStyle(.plain)
     }
 
+    private func toggleRepeat() {
+        withAnimation(.easeInOut(duration: 0.15)) {
+            if repeatExpanded { repeatCount = 2 }
+            repeatExpanded.toggle()
+        }
+    }
+
     private func toggleSession() {
         if viewModel.state == .idle {
-            viewModel.startSession(duration: activeDuration)
+            viewModel.startSession(duration: activeDuration, repeatCount: repeatExpanded ? repeatCount : 1)
+            withAnimation { repeatExpanded = false }
         } else {
             viewModel.stopSession()
         }
