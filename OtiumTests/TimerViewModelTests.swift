@@ -112,6 +112,51 @@ final class TimerViewModelTests: XCTestCase {
         XCTAssertEqual(vm.elapsedFraction, 0.25, accuracy: 0.01)
     }
 
+    func testRepeatSession_setsRepeatState() {
+        vm.startSession(duration: 2, repeatCount: 3)
+        XCTAssertEqual(vm.repeatTotal, 3)
+        XCTAssertEqual(vm.repeatCurrent, 1)
+    }
+
+    func testRepeatSession_autoStartsNextAfterBreak() {
+        vm.startSession(duration: 2, repeatCount: 2)
+        vm._simulateTick(count: 2)       // session 1 expires → breakPending
+        vm._forceBreakActive()            // → breakActive
+        vm._simulateBreakTick(count: 300) // break ends → session 2 auto-starts
+        XCTAssertEqual(vm.state, .running)
+        XCTAssertEqual(vm.repeatCurrent, 2)
+    }
+
+    func testRepeatSession_isLastRepeatTrueOnFinalSession() {
+        vm.startSession(duration: 2, repeatCount: 2)
+        vm._simulateTick(count: 2)
+        vm._forceBreakActive()
+        vm._simulateBreakTick(count: 300) // session 2 starts
+        vm._simulateTick(count: 2)        // session 2 expires
+        XCTAssertTrue(vm.isLastRepeat)
+        XCTAssertEqual(vm.state, .breakPending)
+    }
+
+    func testRepeatSession_stopResetsRepeatState() {
+        vm.startSession(duration: 60, repeatCount: 3)
+        vm.stopSession()
+        XCTAssertEqual(vm.repeatTotal, 1)
+        XCTAssertEqual(vm.repeatCurrent, 1)
+    }
+
+    func testCompleteBlock_logsSessionAndGoesIdle() {
+        vm.startSession(duration: 2, repeatCount: 2)
+        vm._simulateTick(count: 2)
+        vm._forceBreakActive()
+        vm._simulateBreakTick(count: 300) // session 2 starts
+        vm._simulateTick(count: 2)        // session 2 expires (isLastRepeat = true)
+        vm.completeBlock()
+        XCTAssertEqual(vm.state, .idle)
+        XCTAssertEqual(vm.repeatTotal, 1)
+        XCTAssertEqual(sessionStore.sessions.last?.outcome, .completed)
+        XCTAssertEqual(streakStore.count, 1)
+    }
+
     func testExtensionExpiry_completesSessionWithoutReshowingOverlay() {
         // Full extension cycle: session → expiry → break active → 5 more mins → extension expires
         vm.startSession(duration: 2)

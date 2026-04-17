@@ -9,6 +9,10 @@ final class TimerViewModel: ObservableObject {
     @Published private(set) var breakTimeRemaining: TimeInterval
     @Published private(set) var extendUsed: Bool = false
     @Published private(set) var sessionDuration: TimeInterval = 25 * 60
+    @Published private(set) var repeatTotal: Int = 1
+    @Published private(set) var repeatCurrent: Int = 1
+
+    var isLastRepeat: Bool { repeatTotal > 1 && repeatCurrent == repeatTotal }
 
     // Called by OverlayWindowController
     var onBreakStart: (() -> Void)?
@@ -34,13 +38,15 @@ final class TimerViewModel: ObservableObject {
 
     // MARK: - Public API
 
-    func startSession(duration: TimeInterval) {
+    func startSession(duration: TimeInterval, repeatCount: Int = 1) {
         stopTimer()
         state = .running
         sessionDuration = duration
         timeRemaining = duration
         extendUsed = false
         sessionStartTime = Date()
+        repeatTotal = repeatCount
+        repeatCurrent = 1
         startTimer()
     }
 
@@ -60,6 +66,25 @@ final class TimerViewModel: ObservableObject {
         }
         state = .idle
         sessionStartTime = nil
+        repeatTotal = 1
+        repeatCurrent = 1
+    }
+
+    func completeBlock() {
+        let totalDuration = sessionDuration + (extendUsed ? 5 * 60 : 0)
+        sessionStore.add(Session(
+            startTime: sessionStartTime ?? Date(),
+            plannedDuration: sessionDuration,
+            actualDuration: totalDuration,
+            extendUsed: extendUsed,
+            outcome: .completed
+        ))
+        streakStore.recordCleanSession()
+        state = .idle
+        sessionStartTime = nil
+        repeatTotal = 1
+        repeatCurrent = 1
+        onBreakEnd?()
     }
 
     func useExtension() {
@@ -192,9 +217,23 @@ final class TimerViewModel: ObservableObject {
             extendUsed: extendUsed,
             outcome: .completed
         ))
-        streakStore.recordCleanSession()
-        state = .idle
-        sessionStartTime = nil
-        onBreakEnd?()
+
+        if repeatCurrent < repeatTotal {
+            // Auto-start next session in the block (streak increments at the end via completeBlock)
+            repeatCurrent += 1
+            extendUsed = false
+            sessionStartTime = Date()
+            timeRemaining = sessionDuration
+            state = .running
+            onBreakEnd?()
+            startTimer()
+        } else {
+            streakStore.recordCleanSession()
+            state = .idle
+            sessionStartTime = nil
+            repeatTotal = 1
+            repeatCurrent = 1
+            onBreakEnd?()
+        }
     }
 }
