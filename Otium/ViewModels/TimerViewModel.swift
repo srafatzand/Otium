@@ -6,7 +6,7 @@ import Combine
 final class TimerViewModel: ObservableObject {
     @Published private(set) var state: TimerState = .idle
     @Published private(set) var timeRemaining: TimeInterval = 0
-    @Published private(set) var breakTimeRemaining: TimeInterval = 5 * 60
+    @Published private(set) var breakTimeRemaining: TimeInterval
     @Published private(set) var extendUsed: Bool = false
     @Published private(set) var sessionDuration: TimeInterval = 25 * 60
 
@@ -21,10 +21,15 @@ final class TimerViewModel: ObservableObject {
 
     private let streakStore: StreakStore
     private let sessionStore: SessionStore
+    private let settingsStore: TimerSettingsStore
 
-    init(streakStore: StreakStore, sessionStore: SessionStore) {
+    var breakDuration: TimeInterval { settingsStore.breakDuration }
+
+    init(streakStore: StreakStore, sessionStore: SessionStore, settingsStore: TimerSettingsStore) {
         self.streakStore = streakStore
         self.sessionStore = sessionStore
+        self.settingsStore = settingsStore
+        self.breakTimeRemaining = settingsStore.breakDuration
     }
 
     // MARK: - Public API
@@ -139,7 +144,7 @@ final class TimerViewModel: ObservableObject {
 
     func _forceBreakActive() {
         state = .breakActive
-        breakTimeRemaining = 5 * 60
+        breakTimeRemaining = settingsStore.breakDuration
         startTimer()
     }
 
@@ -172,6 +177,7 @@ final class TimerViewModel: ObservableObject {
 
     private func sessionExpired() {
         stopTimer()
+        breakTimeRemaining = settingsStore.breakDuration
         state = .breakPending
         onBreakStart?()
     }

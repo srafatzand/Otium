@@ -7,6 +7,7 @@ final class TimerViewModelTests: XCTestCase {
     var vm: TimerViewModel!
     var streakStore: StreakStore!
     var sessionStore: SessionStore!
+    var settingsStore: TimerSettingsStore!
     let suiteName = "test.vm.\(UUID().uuidString)"
 
     override func setUp() {
@@ -14,7 +15,8 @@ final class TimerViewModelTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         streakStore = StreakStore(defaults: defaults)
         sessionStore = SessionStore(defaults: defaults)
-        vm = TimerViewModel(streakStore: streakStore, sessionStore: sessionStore)
+        settingsStore = TimerSettingsStore(defaults: defaults)
+        vm = TimerViewModel(streakStore: streakStore, sessionStore: sessionStore, settingsStore: settingsStore)
     }
 
     override func tearDown() {

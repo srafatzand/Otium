@@ -6,9 +6,11 @@ struct PopoverView: View {
     @ObservedObject var streakStore: StreakStore
     @ObservedObject var sessionStore: SessionStore
     @ObservedObject var messageStore: MessageStore
+    @ObservedObject var settingsStore: TimerSettingsStore
 
     private enum ActiveTab { case focus, dashboard, settings }
     @State private var activeTab: ActiveTab = .focus
+    @State private var settingsDetail: SettingsDetail? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,7 +55,32 @@ struct PopoverView: View {
                 case .dashboard:
                     DashboardView(sessionStore: sessionStore, streakStore: streakStore)
                 case .settings:
-                    MessagesSettingsView(messageStore: messageStore)
+                    if let detail = settingsDetail {
+                        VStack(spacing: 0) {
+                            HStack(spacing: 6) {
+                                Button("‹ Back") { settingsDetail = nil }
+                                    .buttonStyle(.plain)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color(hex: "a78bfa"))
+                                Text(detail == .timer ? "Timer" : "Break Messages")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(Color(hex: "94a3b8"))
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            Divider().background(Color.white.opacity(0.06))
+                            switch detail {
+                            case .timer:
+                                TimerSettingsView(settingsStore: settingsStore)
+                            case .messages:
+                                MessagesSettingsView(messageStore: messageStore)
+                            }
+                            Spacer()
+                        }
+                    } else {
+                        SettingsHomeView(detail: $settingsDetail)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

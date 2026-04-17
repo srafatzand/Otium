@@ -14,7 +14,8 @@ final class StatusBarController {
         viewModel: TimerViewModel,
         streakStore: StreakStore,
         sessionStore: SessionStore,
-        messageStore: MessageStore
+        messageStore: MessageStore,
+        settingsStore: TimerSettingsStore
     ) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = NSPopover()
@@ -24,7 +25,8 @@ final class StatusBarController {
             viewModel: viewModel,
             streakStore: streakStore,
             sessionStore: sessionStore,
-            messageStore: messageStore
+            messageStore: messageStore,
+            settingsStore: settingsStore
         )
         popover.contentViewController = NSHostingController(rootView: root)
         popover.contentSize = NSSize(width: 250, height: 480)

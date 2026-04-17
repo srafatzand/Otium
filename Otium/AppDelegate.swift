@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var streakStore: StreakStore!
     private var sessionStore: SessionStore!
     private var messageStore: MessageStore!
+    private var settingsStore: TimerSettingsStore!
     private var viewModel: TimerViewModel!
     private var statusBarController: StatusBarController!
     private var overlayController: OverlayWindowController!
@@ -16,11 +17,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         streakStore = StreakStore()
         sessionStore = SessionStore()
         messageStore = MessageStore()
+        settingsStore = TimerSettingsStore()
 
         // ViewModel
         viewModel = TimerViewModel(
             streakStore: streakStore,
-            sessionStore: sessionStore
+            sessionStore: sessionStore,
+            settingsStore: settingsStore
         )
 
         // Overlay controller
@@ -52,7 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             viewModel: viewModel,
             streakStore: streakStore,
             sessionStore: sessionStore,
-            messageStore: messageStore
+            messageStore: messageStore,
+            settingsStore: settingsStore
         )
 
         // Sleep / wake

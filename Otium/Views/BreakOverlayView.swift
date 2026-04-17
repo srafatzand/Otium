@@ -38,7 +38,7 @@ struct BreakOverlayView: View {
                 divider
 
                 // Break countdown
-                Text("5 MINUTE BREAK")
+                Text("\(Int(viewModel.breakDuration / 60)) MINUTE BREAK")
                     .font(.system(size: 11, weight: .regular))
                     .tracking(3)
                     .foregroundColor(Color(hex: "6d5a8a"))
