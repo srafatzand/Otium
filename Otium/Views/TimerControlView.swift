@@ -145,6 +145,9 @@ struct TimerControlView: View {
                                 .font(.system(size: 7, weight: .medium))
                                 .foregroundColor(repeatExpanded ? Color(hex: "6366f1") : Color(hex: "374151"))
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .padding(.bottom, 4)
@@ -161,8 +164,9 @@ struct TimerControlView: View {
                             Button(action: { if repeatCount > 2 { repeatCount -= 1 } }) {
                                 Text("−")
                                     .font(.system(size: 16, weight: .light))
-                                    .frame(width: 34, height: 28)
                                     .foregroundColor(repeatCount <= 2 ? Color(hex: "374151") : Color(hex: "a78bfa"))
+                                    .frame(width: 34, height: 28)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .disabled(repeatCount <= 2)
@@ -175,8 +179,9 @@ struct TimerControlView: View {
                             Button(action: { repeatCount += 1 }) {
                                 Text("+")
                                     .font(.system(size: 16, weight: .light))
-                                    .frame(width: 34, height: 28)
                                     .foregroundColor(Color(hex: "a78bfa"))
+                                    .frame(width: 34, height: 28)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
